@@ -19,6 +19,26 @@ const client = new MongoClient(uri, {
   }
 });
 
+
+// JWT
+const verifyJWT = (req , res , next) => {
+  const authorization = req.headers.authorization;
+  if(!authorization) {
+    return res.status(401).send({ error : true , message : 'unauthorized token' })
+  }
+
+  const token = authorization.split(' ')[1]
+  
+  jwt.verify(token , process.env.ACCESS_KEY_SECRET , (error , decoded) => {
+    if(error) {
+      return res.status(403).send({ error : true , message : 'unathorized access' })
+    }
+    req.decoded = decoded;
+    next()
+  })
+
+}
+
 async function run() {
   try {
 
@@ -54,7 +74,7 @@ async function run() {
 
     // Bookings
 
-    app.get('/bookings' , async(req , res) => {
+    app.get('/bookings' , verifyJWT , async(req , res) => {
       let query = {};
       if (req.query?.email) {
         query = { email : req.query.email }
